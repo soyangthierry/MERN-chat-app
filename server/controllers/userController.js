@@ -83,3 +83,21 @@ module.exports.logOut = (req, res, next) => {
     next(ex);
   }
 };
+
+module.exports.getUserDetails = async (req, res, next) => {
+  try {
+    const { userIds } = req.body;
+
+    // Validate user IDs
+    if (!userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ msg: "Invalid user IDs" });
+    }
+
+    // Fetch user details
+    const users = await User.find({ _id: { $in: userIds } }).select(["_id", "username"]);
+
+    return res.json(users);
+  } catch (ex) {
+    next(ex);
+  }
+};

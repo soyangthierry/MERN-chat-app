@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import styled from "styled-components";
-import { allUsersRoute, host } from "../utils/APIRoutes";
+import { allUsersRoute, getGroups, host } from "../utils/APIRoutes";
 import ChatContainer from "../components/ChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
@@ -15,6 +15,8 @@ export default function Chat() {
   const [contacts, setContacts] = useState([]);
   const [currentChat, setCurrentChat] = useState(undefined);
   const [currentUser, setCurrentUser] = useState(undefined);
+  const [currentChatIsGroup, setCurrentChatIsGroup] = useState(undefined);
+  const [groups, setGroups] = useState([]);
   useEffect(async () => {
     if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
       navigate("/login");
@@ -33,28 +35,35 @@ export default function Chat() {
     }
   }, [currentUser]);
 
-  useEffect(async () => {
-    if (currentUser) {
-      if (currentUser.isAvatarImageSet) {
-        const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
-        setContacts(data.data);
-      } else {
-        navigate("/setAvatar");
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (currentUser) {
+        if (currentUser.isAvatarImageSet) {
+          const userData = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+          setContacts(userData.data);
+          const userGroups = await axios.get(`${getGroups}/${currentUser._id}`);
+          setGroups(userGroups.data.groups);
+        } else {
+          navigate("/setAvatar");
+        }
       }
-    }
+    };
+  
+    fetchUserData();
   }, [currentUser]);
-  const handleChatChange = (chat) => {
+  const handleChatChange = (chat,isGroup) => {
     setCurrentChat(chat);
+    setCurrentChatIsGroup(isGroup);
   };
   return (
     <>
       <Container>
         <div className="container">
-          <Contacts contacts={contacts} changeChat={handleChatChange} />
+        <Contacts contacts={contacts} groups={groups} changeChat={handleChatChange}  />
           {currentChat === undefined ? (
             <Welcome />
           ) : (
-            <ChatContainer currentChat={currentChat} socket={socket} />
+            <ChatContainer currentChat={currentChat} socket={socket} isGroup={currentChatIsGroup}/>
           )}
         </div>
       </Container>

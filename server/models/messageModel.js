@@ -2,10 +2,39 @@ const mongoose = require("mongoose");
 
 const MessageSchema = mongoose.Schema(
   {
-    message: {
-      text: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ["text", "image"],
+      required: true,
     },
-    users: Array,
+    message: {
+      text: {
+        type: String,
+        required: function() {
+          return this.type === "text";
+        },
+      },
+      image: {
+        type: String,
+        required: function() {
+          return this.type === "image";
+        },
+      },
+    },
+    users: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "User",
+      required: function() {
+        return !this.group;
+      },
+    },
+    group: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      required: function() {
+        return !this.users || this.users.length === 0;
+      },
+    },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
